@@ -24,56 +24,11 @@
 #include <libmbdb-1.0/backup.h>
 #include <libcrippy-1.0/libcrippy.h>
 
-/*
-int file_read(const char* file, unsigned char** buf, unsigned int* length) {
-	FILE* fd = NULL;
-	fd = fopen(file, "rb");
-	if(fd == NULL) {
-		return -1;
-	}
-
-	fseek(fd, 0, SEEK_END);
-	long size = ftell(fd);
-	fseek(fd, 0, SEEK_SET);
-
-	unsigned char* data = malloc(size);
-
-	int bytes = fread(data, 1, size, fd);
-	if(bytes != size) {
-		fclose(fd);
-		return -1;
-	}
-	fclose(fd);
-
-	*buf = data;
-	*length = bytes;
-	return bytes;
-}
-
-int file_write(const char* file, unsigned char* buf, unsigned int length) {
-	FILE* fd = NULL;
-	fd = fopen(file, "wb");
-	if(fd == NULL) {
-		return -1;
-	}
-
-	int bytes = fwrite(buf, 1, length, fd);
-	if(bytes != length) {
-		fclose(fd);
-		return -1;
-	}
-	fclose(fd);
-	return bytes;
-}
-
-*/
 int main(int argc, char* argv[]) {
 	if (argc < 5) {
 		printf("usage: mbdbtool <dir> <uuid> <domain> <cmd> [args]\n");
 		return 0;
 	}
-
-
 
 	char* dir = strdup(argv[1]);
 	char* udid = strdup(argv[2]);
@@ -92,6 +47,7 @@ int main(int argc, char* argv[]) {
 			return 0;
 		}
 		backup_t* backup = backup_open(dir, udid);
+
 		// List the directory
 		backup_free(backup);
 	} else if (strcmp(cmd, "get") == 0) {
