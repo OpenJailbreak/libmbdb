@@ -128,6 +128,60 @@ int main(int argc, char* argv[]) {
 			}
 			backup_free(backup);
 		}
+	} else if (strcmp(cmd, "symlink") == 0) {
+		if (argc != 7) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> symlink <from> <to>\n");
+			free(udid);
+			free(cmd);
+			free(dir);
+			free(dom);
+			return 0;
+		}
+		backup_t* backup = backup_open(dir, udid);
+		if (backup) {
+			printf("Backup opened\n");
+			unsigned int size = 0;
+			unsigned char* data = NULL;
+			backup_file_t* file = backup_get_file(backup, dom, argv[5]);
+			file_read("/home/rms/test", &data, &size);
+			if (file) {
+				printf("Found file, replacing it\n");
+				char* fn = backup_get_file_path(backup, file);
+				if (fn != NULL ) {
+					backup_file_set_mode(file, 0120000);
+					backup_file_set_target(file, argv[6]);
+					backup_file_assign_file_data(file, data, size, 1);
+					backup_file_set_length(file, size);
+					backup_file_update_hash(file);
+					backup_update_file(backup, file);
+					backup_write_mbdb(backup);
+					backup_file_free(file);
+				} else {
+					printf("Error, unable to find file in backup\n");
+				}
+			} else {
+				printf("File not found, creating new file\n");
+				unsigned int tm = (unsigned int) (time(NULL ));
+				file = backup_file_create_with_data(data, size, 0);
+				backup_file_set_target(file, argv[6]);
+				backup_file_set_domain(file, dom);
+				backup_file_set_path(file, argv[5]);
+				backup_file_set_mode(file, 0120777);
+				backup_file_set_inode(file, 123456);
+				backup_file_set_uid(file, 0);
+				backup_file_set_gid(file, 0);
+				backup_file_set_time1(file, tm);
+				backup_file_set_time2(file, tm);
+				backup_file_set_time3(file, tm);
+				backup_file_set_length(file, size);
+				backup_file_set_flag(file, 4);
+				backup_file_update_hash(file);
+				backup_update_file(backup, file);
+				backup_write_mbdb(backup);
+				backup_file_free(file);
+			}
+			backup_free(backup);
+		}
 	} else {
 		printf("Unknown command %s\n", cmd);
 	}
