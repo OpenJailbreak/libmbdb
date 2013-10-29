@@ -44,4 +44,7 @@ int backup_update_file(backup_t* backup, backup_file_t* bfile);
 int backup_remove_file(backup_t* backup, backup_file_t* bfile);
 void backup_free(backup_t* backup);
 
+int backup_get_num_files(backup_t* backup);
+backup_file_t* backup_get_file_by_index(backup_t* backup, int index);
+
 #endif /* BACKUP_H_ */

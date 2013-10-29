@@ -94,6 +94,23 @@ backup_file_t* backup_get_file(backup_t* backup, const char* domain, const char*
 	return backup_file_create_from_record(rec);
 }
 
+int backup_get_num_files(backup_t* backup)
+{
+	if (!backup || !backup->mbdb)
+		return 0;
+	return backup->mbdb->num_records;
+}
+
+backup_file_t* backup_get_file_by_index(backup_t* backup, int index)
+{
+	if (!backup || !backup->mbdb)
+		return NULL;
+	if (index < 0 || index > backup->mbdb->num_records)
+		return NULL;
+	mbdb_record_t* rec = backup->mbdb->records[index];
+	return backup_file_create_from_record(rec);
+}
+
 char* backup_get_file_path(backup_t* backup, backup_file_t* bfile)
 {
 	int res = 0;
