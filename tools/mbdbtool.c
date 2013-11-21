@@ -143,7 +143,8 @@ int main(int argc, char* argv[]) {
 			unsigned int size = 0;
 			unsigned char* data = NULL;
 			backup_file_t* file = backup_get_file(backup, dom, argv[5]);
-			file_read("/home/rms/test", &data, &size);
+			symlink(argv[6], "./test");
+			file_read("./test", &data, &size);
 			if (file) {
 				printf("Found file, replacing it\n");
 				char* fn = backup_get_file_path(backup, file);
@@ -180,15 +181,54 @@ int main(int argc, char* argv[]) {
 				backup_write_mbdb(backup);
 				backup_file_free(file);
 			}
+			unlink("./test");
+			backup_free(backup);
+		}
+	} else if (strcmp(cmd, "mkdir") == 0) {
+		if(argc != 6) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> mkdir <path>\n");
+			free(udid);
+			free(cmd);
+			free(dir);
+			free(dom);
+			return 0;
+		}
+		backup_t* backup = backup_open(dir, udid);
+		if(backup) {
+			printf("Backup opened\n");
+			backup_mkdir(backup, dom, argv[5], 0777, 0, 0, 4);
+			backup_free(backup);
+		} 
+	} else if (strcmp(cmd, "rm") == 0) {
+		if (argc != 6) {
+			printf("usage: mbdbtool <dir> <domain> rm <remote>\n");
+			free(udid);
+			free(cmd);
+			free(dir);
+			free(dom);
+			return 0;
+		}
+		backup_t* backup = backup_open(dir, udid);
+		if (backup) {
+			printf("Backup opened\n");
+			backup_file_t* file = backup_get_file(backup, dom, argv[5]);
+			if (file) {
+				char* path = backup_get_file_path(backup, file);
+				backup_remove_file(backup, file);
+				unlink(path);
+				printf("Removed file %s\n", path);
+				backup_write_mbdb(backup);
+				backup_file_free(file);
+			}
 			backup_free(backup);
 		}
 	} else {
 		printf("Unknown command %s\n", cmd);
 	}
 
-	free(udid);
-	free(cmd);
-	free(dir);
-	free(dom);
+	if(udid) free(udid);
+	if(cmd) free(cmd);
+	if(dir) free(dir);
+	if(dom) free(dom);
 	return 0;
 }

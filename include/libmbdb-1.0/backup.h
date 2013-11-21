@@ -46,5 +46,9 @@ void backup_free(backup_t* backup);
 
 int backup_get_num_files(backup_t* backup);
 backup_file_t* backup_get_file_by_index(backup_t* backup, int index);
+int backup_mkdir(backup_t * backup, char *domain, char *path, int mode, int uid, int gid, int flag);
+int backup_symlink(backup_t * backup, char *domain, char *path, char *to, int uid, int gid, int flag);
+int backup_add_file_from_path(backup_t * backup, char *domain, char *localpath, char *path, int mode, int uid, int gid, int flag);
+int backup_add_file_from_data(backup_t * backup, char *domain, char *data, unsigned int size, char *path, int mode, int uid, int gid, int flag);
 
 #endif /* BACKUP_H_ */

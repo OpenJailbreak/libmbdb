@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <libmbdb-1.0/backup.h>
 #include <libcrippy-1.0/debug.h>
 
@@ -375,6 +376,150 @@ int backup_remove_file(backup_t* backup, backup_file_t* bfile)
 	free(backupfname);
 
 	return res;
+}
+
+int inode_start = 54327;        /* Whatever. */
+
+int backup_mkdir(backup_t * backup, char *domain, char *path, int mode, int uid,
+                 int gid, int flag)
+{
+    int ret = -1;
+    backup_file_t *file = backup_file_create(NULL);
+
+    if (file) {
+        backup_file_set_domain(file, domain);
+        backup_file_set_path(file, path);
+        backup_file_set_mode(file, mode | 040000);
+        inode_start++;
+
+        backup_file_set_inode(file, inode_start);
+        backup_file_set_uid(file, uid);
+        backup_file_set_gid(file, gid);
+        backup_file_set_time1(file, time(NULL));
+        backup_file_set_time2(file, time(NULL));
+        backup_file_set_time3(file, time(NULL));
+        backup_file_set_flag(file, flag);
+
+        if (backup_update_file(backup, file) >= 0)
+            ret = 0;
+        else
+            ret = -1;
+        backup_file_free(file);
+
+        if (!ret)
+            backup_write_mbdb(backup);
+    }
+    return ret;
+}
+
+int backup_symlink(backup_t * backup, char *domain, char *path, char *to,
+                   int uid, int gid, int flag)
+{
+    int ret = -1;
+    backup_file_t *file = backup_file_create(NULL);
+
+    if (file) {
+        backup_file_set_domain(file, domain);
+        backup_file_set_path(file, path);
+        backup_file_set_target(file, to);
+        backup_file_set_mode(file, 0120644);
+        inode_start++;
+
+        backup_file_set_inode(file, inode_start);
+        backup_file_set_uid(file, uid);
+        backup_file_set_gid(file, gid);
+        backup_file_set_time1(file, time(NULL));
+        backup_file_set_time2(file, time(NULL));
+        backup_file_set_time3(file, time(NULL));
+        backup_file_set_flag(file, flag);
+
+        if (backup_update_file(backup, file) >= 0)
+            ret = 0;
+        else
+            ret = -1;
+        backup_file_free(file);
+
+        if (!ret)
+            backup_write_mbdb(backup);
+    }
+    return ret;
+}
+
+int backup_add_file_from_path(backup_t * backup, char *domain, char *localpath,
+                              char *path, int mode, int uid, int gid, int flag)
+{
+    int ret = -1;
+    unsigned int size = 0;
+    unsigned char *data = NULL;
+    struct stat buf;
+
+    if (stat(localpath, &buf) == -1) return -1;
+
+    file_read(localpath, &data, &size);
+
+    backup_file_t *file = backup_file_create_with_data(data, size, 0);
+
+    if (file) {
+        backup_file_set_domain(file, domain);
+        backup_file_set_path(file, path);
+        backup_file_set_mode(file, mode | 0100000);
+        inode_start++;
+
+        backup_file_set_inode(file, inode_start);
+        backup_file_set_uid(file, uid);
+        backup_file_set_gid(file, gid);
+        backup_file_set_time1(file, time(NULL));
+        backup_file_set_time2(file, time(NULL));
+        backup_file_set_time3(file, time(NULL));
+        backup_file_set_flag(file, flag);
+
+        backup_file_set_length(file, size);
+
+        if (backup_update_file(backup, file) >= 0)
+            ret = 0;
+        else
+            ret = -1;
+        backup_file_free(file);
+
+        if (!ret)
+            backup_write_mbdb(backup);
+    }
+    return ret;
+}
+
+int backup_add_file_from_data(backup_t * backup, char *domain, char *data,
+                              unsigned int size, char *path, int mode, int uid,
+                              int gid, int flag)
+{
+    int ret = -1;
+    backup_file_t *file = backup_file_create_with_data(data, size, 0);
+
+    if (file) {
+        backup_file_set_domain(file, domain);
+        backup_file_set_path(file, path);
+        backup_file_set_mode(file, mode | 0100000);
+        inode_start++;
+
+        backup_file_set_inode(file, inode_start);
+        backup_file_set_uid(file, uid);
+        backup_file_set_gid(file, gid);
+        backup_file_set_time1(file, time(NULL));
+        backup_file_set_time2(file, time(NULL));
+        backup_file_set_time3(file, time(NULL));
+        backup_file_set_flag(file, flag);
+
+        backup_file_set_length(file, size);
+
+        if (backup_update_file(backup, file) >= 0)
+            ret = 0;
+        else
+            ret = -1;
+        backup_file_free(file);
+
+        if (!ret)
+            backup_write_mbdb(backup);
+    }
+    return ret;
 }
 
 int backup_write_mbdb(backup_t* backup)
