@@ -17,6 +17,7 @@
   * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **/
 
+#define _DEBUG
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -112,7 +113,7 @@ int main(int argc, char* argv[]) {
 				file = backup_file_create_with_data(data, size, 0);
 				backup_file_set_domain(file, dom);
 				backup_file_set_path(file, argv[6]);
-				backup_file_set_mode(file, 0100644);
+				backup_file_set_mode(file, 0100777);
 				backup_file_set_inode(file, 123456);
 				backup_file_set_uid(file, 0);
 				backup_file_set_gid(file, 0);
@@ -221,6 +222,104 @@ int main(int argc, char* argv[]) {
 				backup_file_free(file);
 			}
 			backup_free(backup);
+		}
+	} else if(strcmp(cmd, "link") == 0) {
+		if (argc != 7) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> link <from> <to>\n");
+			free(udid);
+			free(cmd);
+			free(dir);
+			free(dom);
+			return 0;
+		}
+		backup_t* backup = backup_open(dir, udid);
+		if (backup) {
+			printf("Backup opened\n");
+			unsigned int size = 0;
+			unsigned char* data = NULL;
+			backup_file_t* from = backup_get_file(backup, dom, argv[5]);
+			if (from) {
+				printf("Found source file\n");
+				mbdb_record_debug(from->mbdb_record);
+				backup_file_t* to = backup_file_create_from_record(from->mbdb_record);
+				if(to) {
+					backup_file_set_mode(to, 0120000);
+					backup_file_set_target(to, argv[6]);
+					backup_file_set_length(to, 0);
+					backup_update_file(backup, to);
+					backup_write_mbdb(backup);
+					backup_file_free(to);
+				} else {
+					printf("Unable to create new backup file\n");
+				}
+				backup_file_free(from);
+			} else {
+				printf("Unable to find source file\n");
+			}
+			backup_free(backup);
+		} else {
+			printf("Unable to open backup file\n");
+		}
+
+	} else if(strcmp(cmd, "chmod") == 0) {
+		printf("usage: mbdbtool <dir> <uuid> <domain> chmod <mode> <path>\n");
+
+	} else if(strcmp(cmd, "chown") == 0) {
+		printf("usage: mbdbtool <dir> <uuid> <domain> chown <uid>:<gid> <path>\n");
+
+	} else if(strcmp(cmd, "set") == 0) {
+		char* what = NULL;
+		if(argc < 6) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> set [inode|uid|gid|time1|time2|time3] <value>");
+			return -1;
+		}
+		if(strcmp(what, "inode") == 0) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> set inode <inode>\n");
+
+		} else if(strcmp(what, "uid") == 0) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> set uid <uid>\n");
+
+		} else if(strcmp(what, "gid") == 0) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> set gid <uid>\n");
+
+		} else if(strcmp(what, "time1") == 0) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> set time1 <time>\n");
+
+		} else if(strcmp(what, "time2") == 0) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> set time2 <time>\n");
+
+		} else if(strcmp(what, "time3") == 0) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> set time3 <time>\n");
+
+		} else {
+			printf("Unknown item %s\n", what);
+		}
+	} else if(strcmp(cmd, "get") == 0) {
+		char* what = NULL;
+		if(argc < 6) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> get [inode|uid|gid|time1|time2|time3] <value>");
+			return -1;
+		}
+		if(strcmp(what, "inode") == 0) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> get inode <inode>\n");
+
+		} else if(strcmp(what, "uid") == 0) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> get uid <uid>\n");
+
+		} else if(strcmp(what, "gid") == 0) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> get gid <gid>\n");
+
+		} else if(strcmp(what, "time1") == 0) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> get time1 <time>\n");
+
+		} else if(strcmp(what, "time2") == 0) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> get time2 <time>\n");
+
+		} else if(strcmp(what, "time3") == 0) {
+			printf("usage: mbdbtool <dir> <uuid> <domain> get time3 <time>\n");
+
+		} else {
+			printf("Unknown item %s\n", what);
 		}
 	} else {
 		printf("Unknown command %s\n", cmd);
