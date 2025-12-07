@@ -106,7 +106,7 @@ backup_file_t* backup_get_file_by_index(backup_t* backup, int index)
 {
 	if (!backup || !backup->mbdb)
 		return NULL;
-	if (index < 0 || index > backup->mbdb->num_records)
+	if (index < 0 || index >= backup->mbdb->num_records)
 		return NULL;
 	mbdb_record_t* rec = backup->mbdb->records[index];
 	return backup_file_create_from_record(rec);
