@@ -74,10 +74,26 @@ mbdb_t* mbdb_parse(unsigned char* data, unsigned int size) {
 	memcpy(mbdb->data, data, size);
 	mbdb->size = size;
 
-	mbdb->records = (mbdb_record_t**)malloc((mbdb->size / 64) * sizeof(mbdb_record_t)); // should be enough
+	size_t records_capacity = (mbdb->size / 64) + 1;
+	mbdb->records = (mbdb_record_t**)malloc(records_capacity * sizeof(*mbdb->records));
+	if(mbdb->records == NULL) {
+		error("Unable to allocate record table\n");
+		return NULL;
+	}
 	mbdb->num_records = 0;
 
 	while (offset < mbdb->size) {
+		if (mbdb->num_records >= (int)records_capacity) {
+			size_t new_capacity = records_capacity * 2;
+			mbdb_record_t** new_records = (mbdb_record_t**)realloc(
+				mbdb->records, new_capacity * sizeof(*mbdb->records));
+			if (!new_records) {
+				error("Unable to grow record table\n");
+				break;
+			}
+			mbdb->records = new_records;
+			records_capacity = new_capacity;
+		}
 		mbdb_record_t* rec = mbdb_record_parse(&(mbdb->data)[offset]);
 		if (!rec) {
 			error("Unable to parse record at offset 0x%x!\n", offset);
@@ -115,7 +131,13 @@ mbdb_t* mbdb_open(unsigned char* file) {
 
 mbdb_record_t* mbdb_get_record(mbdb_t* mbdb, unsigned int index)
 {
-	return NULL;
+	if (!mbdb || !mbdb->records) {
+		return NULL;
+	}
+	if (index >= (unsigned int)mbdb->num_records) {
+		return NULL;
+	}
+	return mbdb->records[index];
 }
 
 void mbdb_free(mbdb_t* mbdb) {
